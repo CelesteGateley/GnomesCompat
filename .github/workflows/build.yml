@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # BepInEx 5 build that BepInExPack 5.4.2305 ships. The patcher only compiles against it.
+  BEPINEX_VERSION: 5.4.23.5
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Download BepInEx core
+        run: |
+          curl -fsSL -o bepinex.zip "https://github.com/BepInEx/BepInEx/releases/download/v${BEPINEX_VERSION}/BepInEx_win_x64_${BEPINEX_VERSION}.zip"
+          unzip -q bepinex.zip -d "$RUNNER_TEMP/bepinex"
+
+      - name: Build and package
+        shell: pwsh
+        run: ./package.ps1 -BepInExCore "$env:RUNNER_TEMP/bepinex/BepInEx/core"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GnomesCompat-thunderstore
+          path: dist/*.zip
+
+      # Creates a GitHub release only when the manifest version has no release yet,
+      # so pushes without a version bump just build.
+      - name: Create release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(jq -r .version_number thunderstore/manifest.json)
+          tag="v$version"
+          if gh release view "$tag" > /dev/null 2>&1; then
+            echo "Release $tag already exists, skipping."
+            exit 0
+          fi
+          awk -v v="$version" '$0 == "## " v {f=1; next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          gh release create "$tag" dist/*.zip --title "GnomesCompat $version" --notes-file notes.md --target "$GITHUB_SHA"

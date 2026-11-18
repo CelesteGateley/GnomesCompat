@@ -61,7 +61,12 @@ GitHub Actions (`.github/workflows/build.yml`) builds the package on every push 
 and uploads it as a workflow artifact. A push to `main` also creates a GitHub release `v<version>`
 with the zip attached, if that version has no release yet. To release, bump `version_number` in
 `thunderstore/manifest.json`, add a matching `## <version>` section to `CHANGELOG.md` (it becomes
-the release notes), and push. Uploading to Thunderstore is manual.
+the release notes), and push.
+
+When a new release is created, a second job publishes the zip to Thunderstore with `tcli`, using
+`thunderstore/thunderstore.toml` for the team, community and categories. It needs a
+`THUNDERSTORE_TOKEN` repo secret (a service-account token from your Thunderstore team) and runs in
+the `thunderstore` environment, which can require your approval first.
 
 On a successful load, `LogOutput.log` shows four `[Info : GnomesCompat]` lines near the top.
 Launch through Gale. Starting the game from Steam skips BepInEx entirely.

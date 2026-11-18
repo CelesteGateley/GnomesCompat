@@ -1,6 +1,6 @@
 {
   "name": "GnomesCompat",
-  "version_number": "1.0.0",
+  "version_number": "1.0.1",
   "website_url": "https://github.com/CelesteGateley/GnomesCompat",
   "description": "Unofficial fix that makes Gnomes 0.7.0 work on the current Stonewards build again, without modifying Gnomes. Only the host needs it. Remove it once Gnomes is updated.",
   "dependencies": [
